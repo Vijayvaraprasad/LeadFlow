@@ -1,0 +1,27 @@
+{
+  "name": "leadflow-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/app.js",
+    "start": "node src/app.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "node src/db/seed.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "better-sqlite3": "^11.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "express-rate-limit": "^7.4.1"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0",
+    "supertest": "^7.0.0"
+  }
+}
