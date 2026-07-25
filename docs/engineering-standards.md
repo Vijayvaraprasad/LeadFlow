@@ -1,79 +1,66 @@
-# Engineering Standards Proposal & Adoption Strategy
+# Engineering Standards
 
-**Objective:** Establish a baseline of engineering quality for the LeadFlow platform to increase deployment confidence, reduce production bugs, and accelerate feature development over the long term.
+These are the standards I would introduce after stabilizing the codebase. I would keep them practical and enforce the parts that prevent real bugs.
 
----
+## Code Reviews
 
-## Part 1: Engineering Standards
+- Every change to `main` needs one review.
+- Security, permissions, data changes, and business logic should get the most attention.
+- Formatting should be automated so reviews do not become style debates.
+- Large pull requests should be split unless there is a clear reason not to.
 
-### 1. Code Review Protocol
-*   **Requirement:** All changes targeting `main` require at least 1 approval from a peer.
-*   **No Self-Merges:** Authors may not merge their own pull requests.
-*   **SLA:** Reviews should be completed within 4 working hours to prevent blocking.
-*   **Focus:** Reviewers should focus on architecture, security, and logic. Style should be handled by automated tools.
+## Testing
 
-### 2. Testing Requirements
-*   **New Code:** Must be accompanied by automated tests.
-*   **Bug Fixes:** Must include a regression test that fails without the fix and passes with it.
-*   **Coverage Targets:** 
-    *   Services (Business Logic): 70% Unit Test Coverage.
-    *   API Endpoints (Critical Paths): Integration tests via Supertest.
+Tests should focus first on behavior that can break the business:
 
-### 3. Git Workflow
-*   **Branching:** Trunk-based development. Branches should be short-lived (merged within 2 days).
-*   **Naming:** `feature/TICKET-brief-desc`, `fix/TICKET-brief-desc`.
-*   **Merging:** Squash and merge to `main`. This keeps the main history clean and readable.
-*   **Commits:** Follow Conventional Commits (e.g., `feat: add user login`, `fix: handle null pointer`).
+- Login and token handling.
+- Admin versus member permissions.
+- Lead capture.
+- Lead assignment.
+- Status changes.
+- Notes and activity history.
 
-### 4. API Design Standards
-*   **RESTful:** Use correct HTTP methods (GET, POST, PUT, DELETE).
-*   **Status Codes:** Use appropriate codes (200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 500 Server Error).
-*   **Validation:** All incoming request bodies and query parameters must be validated at the edge (via middleware) before reaching controllers.
-*   **Pagination:** All endpoints returning lists must implement limit/offset pagination.
+For bug fixes, I would ask for a regression test when practical. I would not demand full coverage of old code before anyone can ship. That usually makes teams resist testing instead of adopting it.
 
-### 5. Security Standards
-*   **Zero Secrets:** No passwords, API keys, or JWT secrets in code. Use environment variables.
-*   **SQL Injection:** Raw string concatenation for SQL queries is strictly prohibited. Parameterized queries or query builders must be used.
-*   **Sanitization:** Assume all user input is malicious. Validate and sanitize.
+## API Rules
 
-### 6. Architecture Patterns
-*   **Layered Architecture:** 
-    *   `Routes`: HTTP wiring only.
-    *   `Controllers`: Request parsing and response formatting.
-    *   `Services`: Core business rules and orchestration.
-    *   `Repositories`: Database interactions.
-*   **Single Responsibility Principle:** A function or class should do one thing. If a file exceeds 300 lines, it should likely be split.
+- Use the right HTTP status codes.
+- Validate request bodies and query params.
+- Return JSON errors consistently.
+- Paginate list endpoints.
+- Do not expose password hashes or internal secrets.
+- Keep response shapes stable once the frontend depends on them.
 
-### 7. Code Style & Tooling
-*   **Automation:** Prettier and ESLint will be configured.
-*   **Enforcement:** Code must pass linting and formatting checks in CI before merging.
+## Data Access
 
----
+- No SQL string concatenation with user input.
+- Use prepared statements or a query builder.
+- Keep database calls out of React components.
+- Put data access behind backend services or repositories.
 
-## Part 2: Adoption Strategy (Winning Over the Team)
+## Security
 
-Introducing standards to a team accustomed to a "wild west" codebase requires empathy and strategy. Mandates from above build resentment; demonstrating value builds adoption.
+- No secrets in Git.
+- Passwords must be hashed.
+- Admin routes must check both authentication and role.
+- Public endpoints should have rate limits.
+- Permission rules need tests, not only UI checks.
 
-### Addressing Common Objections
+## Git Workflow
 
-**Objection: "We don't have time for this, we need to ship features."**
-*   *Response:* "I hear you, and shipping is our top priority. However, debugging production crashes and dealing with merge conflicts is currently eating up 30% of our week. These standards are an investment to buy that time back. Let's start small: I'll set up automated formatting so we never have to argue about indentation in PRs again. That saves time on day one."
+- Use short-lived branches.
+- Keep commits focused.
+- Squash merge is fine for feature branches.
+- Use clear commit messages like `fix lead assignment permissions` or `add lead notes test`.
 
-**Objection: "It's worked fine so far."**
-*   *Response:* "It got us to where we are, which is great. But as we add more customers, the cracks are showing. We had a near-miss with data exposure last month. We need an architecture that supports our growth, not one that breaks under it."
+## How I Would Get The Team To Adopt This
 
-**Objection: "Writing tests slows us down."**
-*   *Response:* "Writing tests *does* take time upfront. But manual QA and fixing regressions takes longer. We will only require tests for *new* features and bug fixes initially. We aren't going to stop feature work to write tests for old code. I will pair with anyone to help write their first few tests."
+I would not start by dropping a huge rules document on the team. I would start with changes that make their work easier.
 
-**Objection: "You're over-engineering it with Services and Repositories."**
-*   *Response:* "I understand it feels like extra boilerplate. Let me walk you through the `updateLead` refactor I did. By splitting it out, I was able to test the email notification logic in 2 seconds without spinning up a database. It makes testing easier, not harder."
+First, add formatting and a simple test command. Then add tests around the riskiest flows. Then use those tests to make one painful refactor safer.
 
-### The Rollout Playbook
+If someone says tests slow them down, I would not argue in theory. I would pick one recent production bug and show how a small test would have caught it. That is usually more convincing than a lecture.
 
-1.  **Start with Developer Experience (DX) Wins:** Don't start by demanding 100% test coverage. Start by adding Prettier on a pre-commit hook. The team gets immediate value (auto-formatting) with zero effort.
-2.  **The "Boy Scout" Rule for Legacy Code:** We will NOT rewrite the app just to meet standards. The rule is: *Leave the campground cleaner than you found it.* If you touch a legacy file for a feature, improve its formatting and extract a piece of logic. 
-3.  **Lead by Example, Not Mandate:** As a Tech Lead, I will take the hardest, messiest tickets. I will deliver them using the new architecture, with tests, and clearly documented PRs. People emulate what works.
-4.  **Automate the "Bad Cop":** As humans, we shouldn't nitpick style in PRs. Let the CI pipeline (GitHub Actions) reject code that fails linting or drops test coverage. Developers don't argue with bots.
-5.  **Provide Templates:** Make the right way the easy way. I will create a `generate-endpoint` script that scaffolds the Route, Controller, Service, and Test file instantly. 
-6.  **Celebrate Saves:** When a unit test catches a bug *before* it gets merged, call it out in Slack or Standup. Make the value visible.
-7.  **Iterative Retrospectives:** After one month, we will review these standards as a team. What's working? What's too painful? We will adjust them together. Standards are a living agreement, not a sacred text.
+If someone says service layers are overengineering, I would show one route before and after. The point is not to add folders. The point is to make business rules testable without starting the whole app.
+
+The standard I would push hardest is this: when touching risky code, leave it easier to understand than when you found it. That is realistic for a busy team and still moves the codebase forward.

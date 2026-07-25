@@ -1,180 +1,323 @@
-# LeadFlow - Lead Management Platform
+# LeadFlow
 
-LeadFlow is a modern, full-stack lead management CRM built to capture, track, and convert potential customers. Designed with security, performance, and clean architecture in mind.
+LeadFlow is a small lead-management app built for the Digital Heroes training task. It has a public lead capture form and a logged-in sales workspace with admin/member roles.
 
 ## Live Demo
-*   **URL:** [To be filled after deployment]
-*   **Admin Account:** `admin@leadflow.app` / `Admin123!`
-*   **Member Account:** `sarah@leadflow.app` / `Member123!`
 
----
+- URL: https://leadflow-1-yo9c.onrender.com/
+- Admin: `admin@leadflow.app` / `Admin123!`
+- Member: `sarah@leadflow.app` / `Member123!`
 
-## Features
-*   **Public Lead Capture:** Secure, rate-limited public endpoint for ingesting leads from marketing websites.
-*   **Role-Based Access Control (RBAC):** Strict separation between `Admin` and `Member` privileges.
-*   **Pipeline Management:** Track leads across 7 lifecycle stages (New, Contacted, Qualified, Proposal, Won, Lost, Nurture).
-*   **Activity Trail:** Immutable audit logging for all status changes and assignments.
-*   **Notes System:** Append timestamped notes to individual leads.
-*   **Analytics Dashboard:** High-level metrics for sales performance.
-*   **RESTful API:** Fully documented, paginated, and secure JSON API.
+## What It Does
 
----
+- Public lead capture at `/capture`
+- Login with JWT auth
+- Admin and member roles
+- Lead list with search, status filter, assignment filter, and pagination
+- Lead detail page with status pipeline, assignment, value, notes, and activity
+- Admin-only team/user management
+- JSON API used by the React app
+- API tests for auth rules and lead flows
+
+The app also includes the required footer credit:
+
+`Built for Digital Heroes Training Task`
+
+linked to `https://digitalheroesco.com`.
 
 ## Tech Stack
-| Layer | Technology |
-| :--- | :--- |
-| **Backend** | Node.js, Express 4 |
-| **Database** | SQLite (via `better-sqlite3`) |
-| **Authentication** | JWT (JSON Web Tokens) + bcryptjs |
-| **Frontend** | React 18, Vite |
-| **Testing** | Vitest, Supertest |
-| **Deployment** | Render.com |
 
----
+| Part | Tech |
+| --- | --- |
+| Frontend | React, Vite |
+| Backend | Node.js, Express |
+| Database | SQLite with `better-sqlite3` |
+| Auth | JWT, bcrypt |
+| Tests | Vitest, Supertest |
+| Deploy | Render |
 
-## Quick Start
+## Running Locally
 
-### Prerequisites
-*   Node.js (v18+)
-*   npm (v9+)
-
-### Installation & Execution
+Install dependencies:
 
 ```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd LeadFlow
+npm run install:all
+```
 
-# 2. Setup Backend
-cd server
-npm install
-cp .env.example .env
-# Ensure JWT_SECRET is set in .env
-npm run dev
+Start backend and frontend together:
 
-# 3. Setup Frontend (in a new terminal window)
-cd ../client
-npm install
+```bash
 npm run dev
 ```
 
-*   **Server API:** `http://localhost:3001`
-*   **Client App:** `http://localhost:5173`
+Or run them separately:
 
----
+```bash
+cd server
+npm run dev
+```
 
-## API Documentation
+```bash
+cd client
+npm run dev
+```
 
-*   **Base URL:** `/api`
-*   **Authentication:** Include `Authorization: Bearer <your_jwt_token>` in headers.
+Local URLs:
 
-### 1. Authentication
-**`POST /api/auth/login`**
-*   **Auth:** None
-*   **Body:** `{"email": "admin@leadflow.app", "password": "..."}`
-*   **Response (200):** `{"token": "eyJhbG...", "user": {"id": 1, "role": "ADMIN"}}`
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:3001`
 
-### 2. Leads (Public)
-**`POST /api/leads/capture`**
-*   **Auth:** None (Rate limited)
-*   **Body:** `{"firstName": "John", "lastName": "Doe", "email": "john@example.com", "source": "Website"}`
-*   **Response (201):** `{"message": "Lead captured successfully"}`
+## Environment Variables
 
-### 3. Leads (Protected)
-**`GET /api/leads`**
-*   **Auth:** Required (Member/Admin)
-*   **Params:** `?page=1&limit=10&status=New&sort=createdAt&order=desc`
-*   **Response (200):** `{"data": [...], "meta": {"total": 45, "page": 1, "totalPages": 5}}`
+For local backend development:
 
-**`GET /api/leads/:id`**
-*   **Auth:** Required (Member/Admin)
-*   **Response (200):** `{"data": {"id": 1, "firstName": "John", ...}}`
+```env
+JWT_SECRET=replace-with-a-local-secret
+DB_PATH=./data/leadflow.db
+```
 
-**`PUT /api/leads/:id`**
-*   **Auth:** Required (Member/Admin)
-*   **Body:** `{"status": "Contacted", "assignedTo": 2}`
-*   **Response (200):** `{"data": {"id": 1, "status": "Contacted", ...}}`
+On Render, I used:
 
-**`DELETE /api/leads/:id`**
-*   **Auth:** Required (Admin ONLY)
-*   **Response (204):** No Content
+```env
+NODE_ENV=production
+JWT_SECRET=<stored in Render env vars>
+DB_PATH=/tmp/leadflow.db
+```
 
-### 4. Lead Interactions
-**`POST /api/leads/:id/notes`**
-*   **Auth:** Required (Member/Admin)
-*   **Body:** `{"content": "Spoke on phone, very interested."}`
-*   **Response (201):** `{"data": {"id": 10, "content": "..."}}`
+Note: `/tmp` storage on Render free tier is not persistent. It is fine for this demo, but a real version should use Postgres or another persistent database.
 
-**`GET /api/leads/:id/activity`**
-*   **Auth:** Required (Member/Admin)
-*   **Response (200):** `{"data": [{"action": "STATUS_CHANGE", "timestamp": "...", "by": 2}]}`
+## API Docs
 
-### 5. Administration
-**`GET /api/users`**
-*   **Auth:** Required (Admin ONLY)
-*   **Response (200):** `{"data": [{"id": 1, "email": "...", "role": "ADMIN"}, ...]}`
+Base URL:
 
-**`POST /api/users`**
-*   **Auth:** Required (Admin ONLY)
-*   **Body:** `{"email": "new@leadflow.app", "password": "...", "role": "MEMBER"}`
-*   **Response (201):** `{"data": {"id": 3, "email": "..."}}`
+```text
+/api
+```
 
----
+Protected routes require:
 
-## Data Model
+```text
+Authorization: Bearer <token>
+```
 
-| Table | Description | Key Fields |
-| :--- | :--- | :--- |
-| `users` | System users (Admins, Sales) | id, email, password_hash, role |
-| `leads` | Potential customers | id, first_name, last_name, email, status, source, assigned_to |
-| `notes` | Text notes attached to leads | id, lead_id, author_id, content, created_at |
-| `activities` | Immutable audit log | id, lead_id, user_id, action_type, metadata, created_at |
+### Auth
 
----
+#### `POST /api/auth/login`
 
-## Auth & Permissions Matrix
+Body:
+
+```json
+{
+  "email": "admin@leadflow.app",
+  "password": "Admin123!"
+}
+```
+
+Success: `200`
+
+```json
+{
+  "token": "...",
+  "user": {
+    "id": 1,
+    "email": "admin@leadflow.app",
+    "name": "Alex Thompson",
+    "role": "admin"
+  }
+}
+```
+
+Invalid login: `401`
+
+### Leads
+
+#### `POST /api/leads/capture`
+
+Public route. Used by the capture form.
+
+Body:
+
+```json
+{
+  "name": "Priya Sharma",
+  "email": "priya@example.com",
+  "phone": "555-0101",
+  "company": "Acme",
+  "source": "website"
+}
+```
+
+Success: `201`
+
+#### `GET /api/leads`
+
+Requires admin or member token.
+
+Query params:
+
+- `page`
+- `limit`
+- `status`
+- `assigned_to`
+- `search`
+- `sort`
+- `order`
+
+Example:
+
+```text
+/api/leads?page=1&limit=10&status=new
+```
+
+Success: `200`
+
+```json
+{
+  "leads": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 0,
+    "totalPages": 0
+  }
+}
+```
+
+Members only see leads assigned to them. Admins can see all leads.
+
+#### `GET /api/leads/:id`
+
+Returns one lead with notes and activities.
+
+Success: `200`
+
+Not found: `404`
+
+Forbidden for an unassigned member: `403`
+
+#### `PUT /api/leads/:id`
+
+Updates lead fields.
+
+Example body:
+
+```json
+{
+  "status": "contacted",
+  "assigned_to": 2,
+  "value": 5000
+}
+```
+
+Success: `200`
+
+Status and assignment changes are written to the activity log.
+
+#### `DELETE /api/leads/:id`
+
+Admin only.
+
+Success: `200`
+
+Member access: `403`
+
+#### `POST /api/leads/:id/notes`
+
+Adds a note to a lead.
+
+Body:
+
+```json
+{
+  "content": "Called the lead and scheduled a follow-up."
+}
+```
+
+Success: `201`
+
+#### `GET /api/leads/:id/activity`
+
+Returns activity entries for the lead.
+
+Success: `200`
+
+#### `GET /api/leads/stats`
+
+Returns dashboard stats. Members only get stats for their assigned leads.
+
+Success: `200`
+
+### Users
+
+#### `GET /api/users`
+
+Admin only.
+
+Success: `200`
+
+#### `POST /api/users`
+
+Admin only.
+
+Body:
+
+```json
+{
+  "name": "New Member",
+  "email": "new.member@example.com",
+  "password": "Member123!",
+  "role": "member"
+}
+```
+
+Success: `201`
+
+Duplicate email: `409`
+
+## Permission Summary
 
 | Action | Public | Member | Admin |
-| :--- | :--- | :--- | :--- |
-| Capture Lead | ✅ | ✅ | ✅ |
-| View Leads | ❌ | ✅ | ✅ |
-| Update Lead Status | ❌ | ✅ | ✅ |
-| Add Notes | ❌ | ✅ | ✅ |
-| Delete Lead | ❌ | ❌ | ✅ |
-| Manage Users | ❌ | ❌ | ✅ |
+| --- | --- | --- | --- |
+| Submit public lead | Yes | Yes | Yes |
+| Login | Yes | Yes | Yes |
+| View assigned leads | No | Yes | Yes |
+| View all leads | No | No | Yes |
+| Update lead status | No | Assigned only | Yes |
+| Add notes | No | Assigned only | Yes |
+| Delete leads | No | No | Yes |
+| Manage users | No | No | Yes |
 
----
+## Tests
 
-## Testing
-
-The project uses `Vitest` for unit tests and `Supertest` for API integration tests.
+Run backend tests:
 
 ```bash
 cd server
 npm test
 ```
-**Coverage Areas:**
-*   JWT generation and verification logic.
-*   Role-based access control middleware (ensuring Members cannot hit Admin routes).
-*   Lead lifecycle validation (preventing invalid status transitions).
-*   Pagination logic accuracy.
 
----
+Current test coverage includes:
 
-## Task B Documentation
+- Valid and invalid login
+- Missing or invalid token
+- Member blocked from admin routes
+- Member blocked from lead delete
+- Public lead capture
+- Admin lead assignment
+- Member lead visibility rules
+- Status update activity logging
+- Notes
+- Filtering and pagination
 
-As part of the technical assessment, the following architectural documents have been prepared and are located in the `/docs` directory:
+## Task B Docs
 
-*   [Assessment Document](./docs/task-b-assessment.md): A critical review of legacy codebase anti-patterns.
-*   [Migration Plan](./docs/migration-plan.md): A zero-downtime strategy to modernize the legacy code.
-*   [Refactor Demo](./docs/refactor-demo.md): A before/after code comparison demonstrating layered architecture.
-*   [Engineering Standards](./docs/engineering-standards.md): Proposed team standards and adoption strategy.
+The written Task B deliverables are in `/docs`:
 
----
+- [Assessment](./docs/task-b-assessment.md)
+- [Migration plan](./docs/migration-plan.md)
+- [Refactor demo](./docs/refactor-demo.md)
+- [Engineering standards](./docs/engineering-standards.md)
 
-## AI Usage Statement
+## Notes
 
-AI tools (Google Gemini / Claude) were used throughout this project for  architecture planning, and documentation drafting. All generated things were reviewed, tested, and adapted to fit the specific requirements of this project. Key decisions around data modeling, permission architecture, and API design reflect my own technical judgment. The assessment documents and engineering standards reflect genuine professional experience and opinions.
-
----
-
+This project was built as a practical assessment app, not as a production CRM. The main production change I would make next is replacing SQLite-on-Render with a persistent hosted database.
