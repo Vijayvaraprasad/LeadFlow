@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -47,8 +48,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-if (process.env.NODE_ENV === 'production') {
-  const staticPath = path.join(__dirname, '../../client/dist');
+const staticPath = path.join(__dirname, '../../client/dist');
+const hasClientBuild = fs.existsSync(path.join(staticPath, 'index.html'));
+
+if (hasClientBuild) {
   app.use(express.static(staticPath));
   app.get('*', (req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));

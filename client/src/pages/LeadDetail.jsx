@@ -28,10 +28,11 @@ export const LeadDetail = () => {
       try {
         const leadData = await api.getLead(id);
         setLead(leadData);
+        setNotes(leadData.notes || []);
+        setActivity(leadData.activities || []);
         setEditValue(leadData.value || 0);
         
         const activityData = await api.getActivity(id);
-        setNotes(activityData.notes || []);
         setActivity(activityData.activity || []);
 
         if (isAdmin) {
@@ -97,8 +98,9 @@ export const LeadDetail = () => {
       addToast('Note added', 'success');
       
       const activityData = await api.getActivity(id);
-      setNotes(activityData.notes || []);
       setActivity(activityData.activity || []);
+      const leadData = await api.getLead(id);
+      setNotes(leadData.notes || []);
     } catch (error) {
       addToast('Failed to add note', 'error');
     } finally {

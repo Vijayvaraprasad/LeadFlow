@@ -7,7 +7,7 @@ export const PublicCapture = () => {
     email: '',
     phone: '',
     company: '',
-    source: 'Website'
+    source: 'website'
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);

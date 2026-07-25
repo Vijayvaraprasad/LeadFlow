@@ -39,6 +39,33 @@ const request = async (method, path, body = null) => {
   return data;
 };
 
+const normalizeStats = (data) => {
+  const pipeline = {
+    new: 0,
+    contacted: 0,
+    qualified: 0,
+    proposal: 0,
+    negotiation: 0,
+    won: 0,
+    lost: 0
+  };
+
+  (data.byStatus || []).forEach(({ status, count }) => {
+    if (Object.prototype.hasOwnProperty.call(pipeline, status)) {
+      pipeline[status] = count;
+    }
+  });
+
+  return {
+    totalLeads: data.total || 0,
+    wonDeals: data.total_value || 0,
+    conversionRate: data.conversion_rate || 0,
+    activePipeline: (data.total || 0) - (pipeline.won || 0) - (pipeline.lost || 0),
+    pipeline,
+    recentLeads: data.recent || []
+  };
+};
+
 export const api = {
   login: (email, password) => request('POST', '/auth/login', { email, password }),
   
@@ -59,10 +86,16 @@ export const api = {
   deleteLead: (id) => request('DELETE', `/leads/${id}`),
   
   addNote: (leadId, content) => request('POST', `/leads/${leadId}/notes`, { content }),
-  getActivity: (leadId) => request('GET', `/leads/${leadId}/activity`),
+  getActivity: async (leadId) => {
+    const data = await request('GET', `/leads/${leadId}/activity`);
+    return Array.isArray(data) ? { activity: data } : data;
+  },
   
-  getUsers: () => request('GET', '/users'),
+  getUsers: async () => {
+    const data = await request('GET', '/users');
+    return Array.isArray(data) ? { users: data } : data;
+  },
   createUser: (data) => request('POST', '/users', data),
   
-  getStats: () => request('GET', '/leads/stats')
+  getStats: async () => normalizeStats(await request('GET', '/leads/stats'))
 };
