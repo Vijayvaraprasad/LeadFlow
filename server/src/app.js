@@ -43,10 +43,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/users', userRoutes);
 
-app.get('/', (req, res) => {
-  res.json({ message: 'LeadFlow API is running. Access frontend at http://localhost:5173 or API health at /api/health' });
-});
-
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -56,6 +52,10 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(staticPath));
   app.get('*', (req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({ message: 'LeadFlow API is running. Access frontend at http://localhost:5173 or API health at /api/health' });
   });
 }
 
