@@ -3,7 +3,7 @@ services:
     name: leadflow
     runtime: node
     plan: free
-    buildCommand: cd server && npm install && cd ../client && npm install && cd ../client && npm run build
+    buildCommand: cd server && npm install && cd ../client && npm install --include=dev && npm run build
     startCommand: cd server && npm start
     envVars:
       - key: NODE_ENV
